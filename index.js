@@ -16,29 +16,65 @@ client.on('message', async (message) => {
     const isGroups = message.from.endsWith('@g.us') ? true : false;
     console.log(message.body);
 
-    if (message.body === `${config.prefix}everyone`) {
-        const chat = await message.getChat();
+    if (isGroups && config.groups) {
 
-        let text = "";
-        let mentions = [];
+        if (message.body === `${config.prefix}everyone`) {
+            const chat = await message.getChat();
 
-        for (let participant of chat.participants) {
-            const contact = await client.getContactById(participant.id._serialized);
+            let text = "";
+            let mentions = [];
 
-            mentions.push(contact);
-            text += `@${participant.id.user} `;
+            for (let participant of chat.participants) {
+                const contact = await client.getContactById(participant.id._serialized);
+
+                mentions.push(contact);
+                text += `@${participant.id.user} `;
+            }
+
+            await chat.sendMessage(text, { mentions });
         }
-
-        await chat.sendMessage(text, { mentions });
     }
 
-    if ((isGroups && config.groups) || !isGroups) {
+    // Get all menu
+    if (message.body == `${config.prefix}menu`) {
+        try {
+            client.sendMessage(
+                message.from,
+                `List menu :
+1. !sticker (Convert gambar/video/gif menjadi sticker)
+2. !everyone (Mention semua member group)`,
+            );
 
-        // Image to Sticker (Auto && Caption)
-        if ((message.type == "image" || message.type == "video" || message.type == "gif") && (message.body == `${config.prefix}sticker`)) {
+        } catch (error) {
+            console.log("get all menu failed");
+        }
+    }
+
+    // Image to Sticker (Auto && Caption)
+    if ((message.type == "image" || message.type == "video" || message.type == "gif") && (message.body == `${config.prefix}sticker`)) {
+        client.sendMessage(message.from, "*[⏳]* Loading..");
+        try {
+            const media = await message.downloadMedia();
+            client.sendMessage(message.from, media, {
+                sendMediaAsSticker: true,
+                stickerName: config.name, // Sticker Name = Edit in 'config/config.json'
+                stickerAuthor: config.author // Sticker Author = Edit in 'config/config.json'
+            }).then(() => {
+                client.sendMessage(message.from, "*[✅]* Successfully!");
+            });
+        } catch {
+            client.sendMessage(message.from, "*[❎]* Failed!");
+        }
+
+    }
+
+    // Image to Sticker (With Reply Image)
+    else if (message.body == `${config.prefix}sticker`) {
+        const quotedMsg = await message.getQuotedMessage();
+        if (message.hasQuotedMsg && quotedMsg.hasMedia) {
             client.sendMessage(message.from, "*[⏳]* Loading..");
             try {
-                const media = await message.downloadMedia();
+                const media = await quotedMsg.downloadMedia();
                 client.sendMessage(message.from, media, {
                     sendMediaAsSticker: true,
                     stickerName: config.name, // Sticker Name = Edit in 'config/config.json'
@@ -49,29 +85,8 @@ client.on('message', async (message) => {
             } catch {
                 client.sendMessage(message.from, "*[❎]* Failed!");
             }
-
-        }
-
-        // Image to Sticker (With Reply Image)
-        else if (message.body == `${config.prefix}sticker`) {
-            const quotedMsg = await message.getQuotedMessage();
-            if (message.hasQuotedMsg && quotedMsg.hasMedia) {
-                client.sendMessage(message.from, "*[⏳]* Loading..");
-                try {
-                    const media = await quotedMsg.downloadMedia();
-                    client.sendMessage(message.from, media, {
-                        sendMediaAsSticker: true,
-                        stickerName: config.name, // Sticker Name = Edit in 'config/config.json'
-                        stickerAuthor: config.author // Sticker Author = Edit in 'config/config.json'
-                    }).then(() => {
-                        client.sendMessage(message.from, "*[✅]* Successfully!");
-                    });
-                } catch {
-                    client.sendMessage(message.from, "*[❎]* Failed!");
-                }
-            } else {
-                client.sendMessage(message.from, "*[❎]* Reply Image First!");
-            }
+        } else {
+            client.sendMessage(message.from, "*[❎]* Reply Image First!");
         }
     }
 
