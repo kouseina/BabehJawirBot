@@ -1,20 +1,29 @@
 const qrcode = require('qrcode-terminal');
-
-const { Client } = require('whatsapp-web.js');
-const client = new Client();
 const config = require('./config/config.json');
+
+const { Client, LocalAuth } = require('whatsapp-web.js');
+
+const client = new Client({
+    restartOnAuthFail: true,
+    puppeteer: {
+        headless: true,
+        args: ['--no-sandbox', '--disable-dev-shm-usage', "--disabled-setupid-sandbox"],
+    },
+    authStrategy: new LocalAuth({ clientId: "1234" })
+});
 
 client.on('qr', qr => {
     qrcode.generate(qr, { small: true });
 });
 
 client.on('ready', () => {
+    console.clear();
     console.log('Client is ready!');
 });
 
 client.on('message', async (message) => {
     const isGroups = message.from.endsWith('@g.us') ? true : false;
-    console.log(message.body);
+    // console.log(message.body);
 
     if (isGroups && config.groups) {
 
