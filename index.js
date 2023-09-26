@@ -9,7 +9,8 @@ const client = new Client({
         headless: true,
         args: ['--no-sandbox', '--disable-dev-shm-usage', "--disabled-setupid-sandbox"],
     },
-    authStrategy: new LocalAuth({ clientId: "1234" })
+    ffmpeg: './ffmpeg.exe',
+    authStrategy: new LocalAuth({ clientId: "1111" }),
 });
 
 client.on('qr', qr => {
